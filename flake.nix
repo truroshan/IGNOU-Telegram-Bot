@@ -4,7 +4,7 @@
   inputs.nixpkgs.url = "github:NixOs/nixpkgs/nixos-22.11";
   inputs.flake-utils.url = "github:numtide/flake-utils/v1.0.0";
 
-  outputs = inputs: inputs.flake-utils.lib.eachDefaultSystem ( system : 
+  outputs = inputs: (inputs.flake-utils.lib.eachDefaultSystem ( system : 
     let 
         pname = "ignou";
         version = "2.0";
@@ -33,9 +33,9 @@
           cd ${ignouDrv}
           ${pyEnv}/bin/python3 -m bot'';
 
-    in {
+    in rec {
 
-        packages.deafult = pkgs.buildEnv {
+        packages.default = pkgs.buildEnv {
           name = "${pname}-${version}";
           paths = [ ignouDrv pyEnv ];
         };
@@ -43,8 +43,7 @@
         devShell = pkgs.mkShell {
           buildInputs = [ pyEnv ];
         };
-
+    })) // {
         nixosModules.default = import ./nix/module.nix inputs;
-
-    });
+    };
 }
