@@ -1,0 +1,65 @@
+{
+  description = "IGNOU Telegram Bot v2.0";
+
+  inputs.nixpkgs.url = "github:NixOs/nixpkgs/nixos-22.11";
+  inputs.flake-utils.url = "github:numtide/flake-utils";
+
+  outputs = inputs @{ self, nixpkgs, flake-utils }: let
+    forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system);
+    nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; config.allowUnfree = true; });
+    systems = [ "x86_64-linux" "aarch64-linux" ];
+
+    pythonEnv = pkgs : pkgs.python3.withPackages (p: with p; [
+      pyrogram
+      tgcrypto
+      httpx
+      prettytable
+      beautifulsoup4
+    ]);
+
+  in
+  {
+    packages = forAllSystems (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+
+        ignou = pkgs.stdenv.mkDerivation {
+          pname = "ignou-telegram-bot";
+          version = "23.2.18";
+          src = ./.;
+          installPhase = ''
+            mkdir -p $out/bot
+            cp -r bot/* $out/bot/
+          '';
+        };
+        exec-ignou = pkgs.writeShellScriptBin "start-bot" ''
+          cd ${ignou}
+          ${pythonEnv pkgs}/bin/python3 -m bot'';
+
+      in
+      {
+        default = pkgs.buildEnv {
+          name = "ignou-telegram-bot-env";
+          paths = [ 
+            ignou
+            exec-ignou
+            ];
+        };
+      }
+    );
+
+    devShell = forAllSystems (system:
+      let
+        pkgs = nixpkgsFor.${system};
+      in
+      pkgs.mkShell {
+        buildInputs = [ 
+          (pythonEnv pkgs)
+          ];
+      }
+    );
+
+    nixosModules.default = import ./nix/module.nix inputs;
+
+  };
+}
