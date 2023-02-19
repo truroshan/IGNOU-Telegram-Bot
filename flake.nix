@@ -19,9 +19,15 @@
         beautifulsoup4
         ]);
 
-        ignouDrv =  pkgs.stdenv.mkDerivation {
+        ignouScript = pkgs.writeShellScriptBin "start-bot" ''
+          cd ${ignou}
+          ${pyEnv}/bin/python3 -m bot'';
+
+
+        ignou =  pkgs.stdenv.mkDerivation {
           pname = "ignou-telegram-bot";
           version = "2.0";
+          runtimeDependencies = [ pyEnv ];
           src = ./.;
           installPhase = ''
             mkdir -p $out/bot
@@ -29,15 +35,12 @@
           '';
         };
 
-        ignouScript = pkgs.writeShellScriptBin "start-bot" ''
-          cd ${ignouDrv}
-          ${pyEnv}/bin/python3 -m bot'';
 
     in rec {
 
         packages.default = pkgs.buildEnv {
           name = "${pname}-${version}";
-          paths = [ ignouDrv pyEnv ];
+          paths = [ ignou ignouScript ];
         };
 
         devShell = pkgs.mkShell {
