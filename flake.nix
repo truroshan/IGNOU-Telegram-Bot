@@ -17,6 +17,7 @@
         httpx
         prettytable
         beautifulsoup4
+        lxml
         ]);
 
         ignouScript = pkgs.writeShellScriptBin "start-bot" ''
